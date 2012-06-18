@@ -84,6 +84,7 @@
                          (with-current-buffer (get-buffer-create "*Yank*")
                            (delete-region (point-min) (point-max))
                            (insert kill-text)
+                           (goto-char (point-min))
                            (display-buffer (current-buffer))
                            (fit-window-to-buffer
                             (get-buffer-window (current-buffer)))
