@@ -61,6 +61,11 @@
   :type 'boolean
   :group 'erc-yank)
 
+(defcustom erc-yank-display-text-on-prompt t
+  "If non-nil, show the text to yank in another buffer when prompting."
+  :type 'boolean
+  :group 'erc-yank)
+
 (defun erc-yank (&optional arg)
   "Yank or make a gist depending on the size of the yanked text."
   (interactive "*P")
@@ -71,9 +76,21 @@
          (lines (length (split-string kill-text "\n"))))
     (if (and (> lines erc-yank-flood-limit)
              (or (not erc-yank-query-before-gisting)
-                 (y-or-n-p
-                  (format "Text to yank is %d lines; create a Gist instead? "
-                          lines))))
+                 (let ((query
+                        (format (concat "Text to yank is %d lines;"
+                                        " create a Gist instead? ") lines)))
+                   (if erc-yank-display-text-on-prompt
+                       (save-window-excursion
+                         (with-current-buffer (get-buffer-create "*Yank*")
+                           (delete-region (point-min) (point-max))
+                           (insert kill-text)
+                           (display-buffer (current-buffer))
+                           (fit-window-to-buffer
+                            (get-buffer-window (current-buffer)))
+                           (unwind-protect
+                               (y-or-n-p query)
+                             (kill-buffer (current-buffer)))))
+                     (y-or-n-p query)))))
         (let ((buf (current-buffer)))
           (with-temp-buffer
             (insert kill-text)
