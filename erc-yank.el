@@ -38,7 +38,6 @@
 ;;     :commands erc
 ;;     :config
 ;;     (use-package erc-yank
-;;       :commands erc-yank
 ;;       :init
 ;;       (bind-key "C-y" 'erc-yank erc-mode-map)))
 ;;
