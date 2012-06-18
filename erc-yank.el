@@ -56,14 +56,24 @@
   :type 'integer
   :group 'erc-yank)
 
+(defcustom erc-yank-query-before-gisting t
+  "If non-nil, ask the user before creating a new Gist."
+  :type 'boolean
+  :group 'erc-yank)
+
 (defun erc-yank (&optional arg)
   "Yank or make a gist depending on the size of the yanked text."
   (interactive "*P")
-  (let ((kill-text (current-kill (cond
-                                  ((listp arg) 0)
-                                  ((eq arg '-) -2)
-                                  (t (1- arg))))))
-    (if (> (length (split-string kill-text "\n")) erc-yank-flood-limit)
+  (let* ((kill-text (current-kill (cond
+                                   ((listp arg) 0)
+                                   ((eq arg '-) -2)
+                                   (t (1- arg)))))
+         (lines (length (split-string kill-text "\n"))))
+    (if (and (> lines erc-yank-flood-limit)
+             (or (not erc-yank-query-before-gisting)
+                 (y-or-n-p
+                  (format "Text to yank is %d lines; create a Gist instead? "
+                          lines))))
         (let ((buf (current-buffer)))
           (with-temp-buffer
             (insert kill-text)
