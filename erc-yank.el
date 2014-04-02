@@ -41,11 +41,13 @@
 ;;       :init
 ;;       (bind-key "C-y" 'erc-yank erc-mode-map)))
 ;;
-;; This module requires gist.el, from: https://github.com/defunkt/gist.el
+;; If you want to use github instead of sprunge.us, install gist.el
+;; from https://github.com/defunkt/gist.el and add
+;;
+;;   (require 'gist)
+;;   (setq erc-yank-gisting-function 'erc-yank-gh-gist-region)
 
 ;;; Code:
-
-(require 'gist)
 
 (defgroup erc-yank nil
   "Automagically create a Gist if pasting more than 5 lines"
@@ -65,6 +67,32 @@
   "If non-nil, show the text to yank in another buffer when prompting."
   :type 'boolean
   :group 'erc-yank)
+
+(defcustom erc-yank-gisting-function 'erc-yank-sprunge-region
+  "Function to use for gisting."
+  :type 'function
+  :group 'erc-yank)
+
+(defun erc-yank-gh-gist-region (begin end buf)
+  (gist-region begin end nil
+	       `(lambda (gist)
+		  (with-current-buffer ,buf
+		    (insert (oref gist :html-url))))))
+
+(defun erc-yank-sprunge-region (begin end buf)
+  (let* ((string (buffer-substring-no-properties begin end))
+	 (location (with-temp-buffer
+		     (insert string)
+		     (shell-command-on-region
+		      (point-min)
+		      (point-max)
+		      (concat "curl -sF 'sprunge=<-' http://sprunge.us")
+		      nil
+		      'replace)
+		     (goto-char (point-min))
+		     (buffer-substring-no-properties (point-min) (line-end-position)))))
+    (with-current-buffer buf
+      (insert location))))
 
 (defun erc-yank (&optional arg)
   "Yank or make a gist depending on the size of the yanked text."
@@ -95,10 +123,7 @@
         (let ((buf (current-buffer)))
           (with-temp-buffer
             (insert kill-text)
-            (gist-region (point-min) (point-max) nil
-                         `(lambda (gist)
-                            (with-current-buffer ,buf
-                              (insert (oref gist :html-url)))))))
+	    (funcall erc-yank-gisting-function (point-min) (point-max) buf)))
       (yank arg))))
 
 (provide 'erc-yank)
