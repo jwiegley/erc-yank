@@ -16,4 +16,9 @@ Or, if you want to use my `use-package' macro:
         :init
         (bind-key "C-y" 'erc-yank erc-mode-map)))
 
-This module requires gist.el, from: https://github.com/defunkt/gist.el
+If you want to use github instead of sprunge.us, install gist.el
+from https://github.com/defunkt/gist.el and add
+
+    (require 'gist)
+    (setq erc-yank-gisting-function 'erc-yank-gh-gist-region)
+
