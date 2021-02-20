@@ -1,12 +1,12 @@
-;;; erc-yank --- Automagically create a Gist if pasting more than 5 lines
+;;; erc-yank.el --- Automagically create a Gist if pasting more than 5 lines
 
 ;; Copyright (C) 2012 John Wiegley
 
 ;; Author: John Wiegley <jwiegley@gmail.com>
 ;; Created: 17 Jun 2012
 ;; Version: 1.0
-;; Keywords: erc yank gist
-;; X-URL: https://github.com/jwiegley/erc-yank
+;; Keywords: comm erc chat irc yank gist
+;; URL: https://github.com/jwiegley/erc-yank
 
 ;; This program is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU General Public License as
@@ -65,34 +65,37 @@
   :group 'erc-yank)
 
 (defun erc-yank (&optional arg)
-  "Yank or make a gist depending on the size of the yanked text."
+  "Yank or make a gist depending on the size of the yanked text.
+
+The prefix argument ARG controls the behavior of `current-kill'
+and can be used to yank from different positions in the kill ring."
   (interactive "*P")
   (let* ((kill-text (current-kill (cond
-                                   ((listp arg) 0)
-                                   ((eq arg '-) -2)
-                                   (t (1- arg)))))
-         (lines (length (split-string kill-text "\n"))))
+				   ((listp arg) 0)
+				   ((eq arg '-) -2)
+				   (t (1- arg)))))
+	 (lines (length (split-string kill-text "\n"))))
     (when (and (> lines erc-yank-flood-limit)
-               (or (not erc-yank-query-before-gisting)
-                   (let ((query
-                          (format (concat "Text to yank is %d lines;"
-                                          " create a Gist instead? ") lines)))
-                     (if erc-yank-display-text-on-prompt
-                         (save-window-excursion
-                           (with-current-buffer (get-buffer-create "*Yank*")
-                             (delete-region (point-min) (point-max))
-                             (insert kill-text)
-                             (goto-char (point-min))
-                             (display-buffer (current-buffer))
-                             (fit-window-to-buffer
-                              (get-buffer-window (current-buffer)))
-                             (unwind-protect
-                                 (y-or-n-p query)
-                               (kill-buffer (current-buffer)))))
-                       (y-or-n-p query)))))
+	       (or (not erc-yank-query-before-gisting)
+		   (let ((query
+			  (format (concat "Text to yank is %d lines;"
+					  " create a Gist instead? ") lines)))
+		     (if erc-yank-display-text-on-prompt
+			 (save-window-excursion
+			   (with-current-buffer (get-buffer-create "*Yank*")
+			     (delete-region (point-min) (point-max))
+			     (insert kill-text)
+			     (goto-char (point-min))
+			     (display-buffer (current-buffer))
+			     (fit-window-to-buffer
+			      (get-buffer-window (current-buffer)))
+			     (unwind-protect
+				 (y-or-n-p query)
+			       (kill-buffer (current-buffer)))))
+		       (y-or-n-p query)))))
       (with-temp-buffer
-        (call-process "gist" nil t nil "-P")
-        (kill-ring-save (point-min) (1- (point-max)))))
+	(call-process "gist" nil t nil "-P")
+	(kill-ring-save (point-min) (1- (point-max)))))
     (yank arg)))
 
 (provide 'erc-yank)
